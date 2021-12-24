@@ -26,7 +26,6 @@
 #include "SDL_events.h"
 #include "SDL_thread.h"
 #include "SDL_events_c.h"
-#include "../SDL_hints_c.h"
 #include "../timer/SDL_timer_c.h"
 #if !SDL_JOYSTICK_DISABLED
 #include "../joystick/SDL_joystick_c.h"
@@ -143,11 +142,6 @@ SDL_AutoUpdateSensorsChanged(void *userdata, const char *name, const char *oldVa
 
 #endif /* !SDL_SENSOR_DISABLED */
 
-static void SDLCALL
-SDL_PollSentinelChanged(void *userdata, const char *name, const char *oldValue, const char *hint)
-{
-    SDL_EventState(SDL_POLLSENTINEL, SDL_GetStringBoolean(hint, SDL_TRUE) ? SDL_ENABLE : SDL_DISABLE);
-}
 
 /* 0 (default) means no logging, 1 means logging, 2 means logging with mouse and finger motion */
 static int SDL_DoEventLogging = 0;
@@ -407,10 +401,6 @@ SDL_LogEvent(const SDL_Event *event)
             break;
 
         #undef SDL_EVENT_CASE
-
-        case SDL_POLLSENTINEL:
-            /* No logging necessary for this one */
-            break;
 
         default:
             if (!name[0]) {
@@ -953,21 +943,6 @@ SDL_WaitEventTimeout(SDL_Event * event, int timeout)
     Uint32 start = 0;
     Uint32 expiration = 0;
 
-    /* First check for existing events */
-    switch (SDL_PeepEvents(event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT)) {
-    case -1:
-        return 0;
-    case 0:
-        break;
-    default:
-        /* Check whether we have reached the end of the poll cycle, and no more events are left */
-        if (timeout == 0 && event && event->type == SDL_POLLSENTINEL) {
-            return (SDL_PeepEvents(event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) == 1);
-        }
-        /* Has existing events */
-        return 1;
-    }
-
     if (timeout > 0) {
         start = SDL_GetTicks();
         expiration = start + timeout;
@@ -1004,13 +979,6 @@ SDL_WaitEventTimeout(SDL_Event * event, int timeout)
             SDL_Delay(1);
             break;
         default:
-            if (timeout == 0 && SDL_GetEventState(SDL_POLLSENTINEL) == SDL_ENABLE) {
-                /* We are at the start of a poll cycle with at least one new event.
-                   Add a sentinel event to mark the end of the cycle. */
-                SDL_Event sentinel;
-                sentinel.type = SDL_POLLSENTINEL;
-                SDL_PushEvent(&sentinel);
-            }
             /* Has events */
             return 1;
         }
@@ -1305,7 +1273,6 @@ SDL_EventsInit(void)
     SDL_AddHintCallback(SDL_HINT_AUTO_UPDATE_SENSORS, SDL_AutoUpdateSensorsChanged, NULL);
 #endif
     SDL_AddHintCallback(SDL_HINT_EVENT_LOGGING, SDL_EventLoggingChanged, NULL);
-    SDL_AddHintCallback(SDL_HINT_POLL_SENTINEL, SDL_PollSentinelChanged, NULL);
     if (SDL_StartEventLoop() < 0) {
         SDL_DelHintCallback(SDL_HINT_EVENT_LOGGING, SDL_EventLoggingChanged, NULL);
         return -1;
@@ -1321,7 +1288,6 @@ SDL_EventsQuit(void)
 {
     SDL_QuitQuit();
     SDL_StopEventLoop();
-    SDL_DelHintCallback(SDL_HINT_POLL_SENTINEL, SDL_PollSentinelChanged, NULL);
     SDL_DelHintCallback(SDL_HINT_EVENT_LOGGING, SDL_EventLoggingChanged, NULL);
 #if !SDL_JOYSTICK_DISABLED
     SDL_DelHintCallback(SDL_HINT_AUTO_UPDATE_JOYSTICKS, SDL_AutoUpdateJoysticksChanged, NULL);

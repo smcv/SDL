@@ -160,9 +160,6 @@ typedef enum
     SDL_RENDER_TARGETS_RESET = 0x2000, /**< The render targets have been reset and their contents need to be updated */
     SDL_RENDER_DEVICE_RESET, /**< The device has been reset and all textures need to be recreated */
 
-    /* Internal events */
-    SDL_POLLSENTINEL = 0x7F00, /**< Signals the end of an event poll cycle */
-
     /** Events ::SDL_USEREVENT through ::SDL_LASTEVENT are for your use,
      *  and should be allocated with SDL_RegisterEvents()
      */
