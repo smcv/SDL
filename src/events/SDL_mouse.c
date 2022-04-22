@@ -347,6 +347,7 @@ static int
 SDL_PrivateSendMouseMotion(SDL_Window * window, SDL_MouseID mouseID, int relative, int x, int y)
 {
     SDL_Mouse *mouse = SDL_GetMouse();
+    SDL_bool first_position = SDL_FALSE;
     int posted;
     int xrel;
     int yrel;
@@ -410,7 +411,7 @@ SDL_PrivateSendMouseMotion(SDL_Window * window, SDL_MouseID mouseID, int relativ
         mouse->x = x;
         mouse->y = y;
         mouse->has_position = SDL_TRUE;
-        return 0;
+        first_position = SDL_TRUE;
     } else if (!xrel && !yrel) {  /* Drop events that don't change state */
 #ifdef DEBUG_MOUSE
         SDL_Log("Mouse event didn't change state - dropped!\n");
@@ -486,7 +487,11 @@ SDL_PrivateSendMouseMotion(SDL_Window * window, SDL_MouseID mouseID, int relativ
 
     /* Post the event, if desired */
     posted = 0;
-    if (SDL_GetEventState(SDL_MOUSEMOTION) == SDL_ENABLE) {
+    if (first_position && !xrel && !yrel) {
+#ifdef DEBUG_MOUSE
+        SDL_Log("First mouse event after warp didn't change state - dropped!\n");
+#endif
+    } else if (SDL_GetEventState(SDL_MOUSEMOTION) == SDL_ENABLE) {
         SDL_Event event;
         event.motion.type = SDL_MOUSEMOTION;
         event.motion.windowID = mouse->focus ? mouse->focus->id : 0;
