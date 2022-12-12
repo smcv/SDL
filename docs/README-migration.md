@@ -24,8 +24,9 @@ and then add $SDL3_CFLAGS to their project CFLAGS and $SDL3_LIBS to their projec
 
 Makefile users can use this snippet to include SDL support in their project:
 ```
-CFLAGS += $(shell pkg-config sdl3 --cflags)
-LDFLAGS += $(shell pkg-config sdl3 --libs)
+PKG_CONFIG ?= ${CROSS_COMPILE}pkg-config
+CFLAGS += $(shell ${PKG_CONFIG} sdl3 --cflags)
+LDFLAGS += $(shell ${PKG_CONFIG} sdl3 --libs)
 ```
 
 The SDL3main and SDL3test libraries have been renamed SDL3_main and SDL3_test, respectively.
